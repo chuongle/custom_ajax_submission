@@ -1,0 +1,65 @@
+<?php
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\HtmlCommand;
+
+/**
+ * @file
+ * Contains custom_ajax_submission.module.
+ */
+
+/**
+ * Implements hook_form_alter().
+ */
+function custom_ajax_submission_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  // add ajax submission to all webform
+  // you can handle this differently if you use a different form module
+  if(isset($form['#webform_id'])) {
+    _add_ajax_submission_handler_for_webform($form, $form_id);
+  }
+}
+
+/*
+ * Implement ajax submission for webform
+ */
+function _add_ajax_submission_handler_for_webform(&$form, $form_id) {
+  $wrapper = str_replace('_', '-', $form_id) . '-ajax-wrapper';
+  $form['#prefix'] = '<div id="' . $wrapper . '">';
+  $form['#suffix'] = '<div class="message"></div></div>';
+  $form['actions']['submit']['#ajax'] = array(
+    'callback' => '_webform_submission_ajax_callback_support',
+    'wrapper' => $wrapper,
+    'effect' => 'fade',
+    'progress' => array(
+      'type' => 'throbber',
+      'message' => NULL,
+    ),
+  );
+}
+
+/*
+ * Implement ajax submission callback
+ */
+function _webform_submission_ajax_callback_support($form, FormStateInterface &$form_state) {
+  $response = new AjaxResponse();
+  $wrapper = str_replace('_', '-', $form['#form_id']) . '-ajax-wrapper';
+  $errors = $form_state->getErrors();
+
+  if(!empty($errors)) {
+    $error_message = '
+      <div class="error-div w-form-fail">
+        <h4>Oops!</h4>
+        <div>Something went wrong while submitting the form. Please Try Again.</div>
+      </div>';
+    $response->addCommand(new HtmlCommand(".message", $error_message));
+  } else {
+    $message = '
+      <div class="thankyou-div w-form-done">
+        <h4>Thank You!</h4>
+        <div>Your submission has been received and a member of our team will be in touch.</div>
+      </div>';
+    $response->addCommand(new HtmlCommand("#$wrapper", $message));
+  }
+  return $response;
+}

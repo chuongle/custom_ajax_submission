@@ -1,0 +1,5 @@
+name: Custom Ajax Submission
+type: module
+description: Custom module to handle ajax submission for Drupal Webform or Contact Form.
+core: 8.x
+package: Custom
